@@ -332,23 +332,17 @@ namespace Pong
             light.AddPolygon(player1Circle.ToArray());
             light.AddPolygon(player2Circle.ToArray());
             night.AddPath(light, true);
-            using (Graphics g = this.CreateGraphics())
-            {
-                g.FillPath(blackBrush, night);
-                g.DrawPath(Pens.White, night);
-            }
+
+            e.Graphics.FillPath(blackBrush, night);
+            e.Graphics.DrawPath(Pens.White, night);
+
 
             e.Graphics.FillRectangle(whiteBrush, player1);
             e.Graphics.FillRectangle(whiteBrush, player2);
-            
-            
-            
+                
             Filter(player1Circle, e);
             Filter(player2Circle, e);
             int amountOfLines = 1;
-
-            
-
 
             for (int i = 0; i < amountOfLines; i++)
             {
@@ -383,7 +377,7 @@ namespace Pong
         private void Glitch_Tick(object sender, EventArgs e)
         {
             x += 1;
-            double alpha = -50 * Math.Cos((100 )* x) + 50;
+            double alpha = -50 * Math.Cos((100)* x) + 50;
             Color transparentBlack = Color.FromArgb(x, Color.Black);
             SolidBrush blackBrush = new SolidBrush(transparentBlack);
         }
