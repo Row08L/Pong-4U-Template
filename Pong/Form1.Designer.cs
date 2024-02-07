@@ -91,19 +91,20 @@
             // Glitch
             // 
             this.Glitch.Enabled = true;
-            this.Glitch.Interval = 500;
+            this.Glitch.Interval = 1000;
             this.Glitch.Tick += new System.EventHandler(this.Glitch_Tick);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.Black;
+            this.BackColor = System.Drawing.Color.Gray;
             this.ClientSize = new System.Drawing.Size(821, 554);
             this.Controls.Add(this.plaery2ScoreLabel);
             this.Controls.Add(this.player1ScoreLabel);
             this.Controls.Add(this.startLabel);
             this.DoubleBuffered = true;
+            this.ForeColor = System.Drawing.SystemColors.ControlText;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "Form1";

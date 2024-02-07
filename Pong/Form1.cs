@@ -25,6 +25,7 @@ namespace Pong
     {
 
         #region global values
+        SolidBrush blackBrush = new SolidBrush(Color.Black);
         //random value generator
         private Random random = new Random();
         //graphics objects for drawing
@@ -53,6 +54,8 @@ namespace Pong
         const int BALL_WIDTH = 20;
         const int BALL_HEIGHT = 20; 
         Rectangle ball;
+
+        int x = 0;
 
         //player values
         const int PADDLE_SPEED = 6;
@@ -313,19 +316,39 @@ namespace Pong
             player1Circle.AddRange(PlayerLight(player1));
             player2Circle.AddRange(PlayerLight(player2));
 
-            
+            GraphicsPath night = new GraphicsPath();
+            GraphicsPath light = new GraphicsPath();
+
+            PointF[] border = new PointF[]
+            {
+                new PointF(0, 0),
+                new PointF(this.Width, 0),
+                new PointF(this.Width, this.Height),
+                new PointF(0, this.Height)
+            };
+
+            e.Graphics.FillRectangle(whiteBrush, ball);
+            night.AddPolygon(border);
+            light.AddPolygon(player1Circle.ToArray());
+            light.AddPolygon(player2Circle.ToArray());
+            night.AddPath(light, true);
+            using (Graphics g = this.CreateGraphics())
+            {
+                g.FillPath(blackBrush, night);
+                g.DrawPath(Pens.White, night);
+            }
 
             e.Graphics.FillRectangle(whiteBrush, player1);
             e.Graphics.FillRectangle(whiteBrush, player2);
-            e.Graphics.FillRectangle(whiteBrush, ball);
+            
             
             
             Filter(player1Circle, e);
             Filter(player2Circle, e);
             int amountOfLines = 1;
 
-            GraphicsPath night = new GraphicsPath();
-            GraphicsPath light = new GraphicsPath();
+            
+
 
             for (int i = 0; i < amountOfLines; i++)
             {
@@ -359,7 +382,10 @@ namespace Pong
 
         private void Glitch_Tick(object sender, EventArgs e)
         {
-
+            x += 1;
+            double alpha = -50 * Math.Cos((100 )* x) + 50;
+            Color transparentBlack = Color.FromArgb(x, Color.Black);
+            SolidBrush blackBrush = new SolidBrush(transparentBlack);
         }
 
         
