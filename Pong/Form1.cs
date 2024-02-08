@@ -25,7 +25,9 @@ namespace Pong
     {
 
         #region global values
-        bool night = false;
+        double hitSpeed = 0.2;
+        int hitNumber;
+        bool nightTime = false;
         bool once = false;
         SolidBrush blackBrush;
         //random value generator
@@ -148,6 +150,8 @@ namespace Pong
         {
             if (newGameOk)
             {
+                
+                x = 0;
                 player1Score = player2Score = 0;
                 newGameOk = false;
                 startLabel.Visible = false;
@@ -157,14 +161,14 @@ namespace Pong
             //player start positions
             player1 = new Rectangle(PADDLE_EDGE, this.Height / 2 - PADDLE_HEIGHT / 2, PADDLE_WIDTH, PADDLE_HEIGHT);
             player2 = new Rectangle(this.Width - PADDLE_EDGE - PADDLE_WIDTH, this.Height / 2 - PADDLE_HEIGHT / 2, PADDLE_WIDTH, PADDLE_HEIGHT);
-            if (night = true)
+            if (nightTime = true)
             {
                 NightCalculator.Interval = 1;
                 x += 7;
             }
             // TODO create a ball rectangle in the middle of screen
             ball = new Rectangle(this.Width / 2 - BALL_WIDTH / 2, this.Height / 2 - BALL_HEIGHT / 2, BALL_WIDTH, BALL_HEIGHT);
-
+            hitNumber = 0;
         }
 
         /// <summary>
@@ -177,20 +181,20 @@ namespace Pong
 
             if (ballMoveRight == true)
             {
-                ball.X += BALL_SPEED;
+                ball.X += Convert.ToInt32(BALL_SPEED + hitNumber * hitSpeed);
             }
             else
             {
-                ball.X -= BALL_SPEED;
+                ball.X -= Convert.ToInt32(BALL_SPEED + hitNumber * hitSpeed);
             }
 
             if (ballMoveDown == true)
             {
-                ball.Y += BALL_SPEED;
+                ball.Y += Convert.ToInt32(BALL_SPEED + hitNumber * hitSpeed);
             }
             else
             {
-                ball.Y -= BALL_SPEED;
+                ball.Y -= Convert.ToInt32(BALL_SPEED + hitNumber * hitSpeed);
             }
             #endregion
 
@@ -239,12 +243,8 @@ namespace Pong
                 hit = true;
                 ballMoveRight =! ballMoveRight;
                 collisionSound.Play();
+                hitNumber += 1;
             }
-
-            /*  ENRICHMENT
-             *  Instead of using two if statments as noted above see if you can create one
-             *  if statement with multiple conditions to play a sound and change direction
-             */
             #endregion
 
             #region ball collision with side walls (point scored)
@@ -286,11 +286,6 @@ namespace Pong
             this.Refresh();
         }
         
-        /// <summary>
-        /// Displays a message for the winner when the game is over and allows the user to either select
-        /// to play again or end the program
-        /// </summary>
-        /// <param name="winner">The player name to be shown as the winner</param>
         private void GameOver(bool player1Win, bool player2Win)
         {
             startLabel.Visible = true;
@@ -356,35 +351,36 @@ namespace Pong
             Filter(player1Circle, e);
             Filter(player2Circle, e);
             int amountOfLines = 1;
-
+            
             for (int i = 0; i < amountOfLines; i++)
             {
                 int row = random.Next(0, this.Height);
-            
+
                 // Capture a row of pixels
                 Bitmap bitmap = new Bitmap(this.Width, 1);
                 using (Graphics graphics = Graphics.FromImage(bitmap))
                 {
                     graphics.CopyFromScreen(0, row, 0, 0, new Size(this.Width, 1));
                 }
-            
+
                 // Extract pixel colors into a list
                 List<Color> pixels = new List<Color>();
                 for (int x = 0; x < bitmap.Width; x++)
                 {
                     pixels.Add(bitmap.GetPixel(x, 0));
                 }
-            
+
                 // Shift the pixels by a random amount
                 int shift = random.Next(10, 20) % pixels.Count;
                 pixels = pixels.Skip(shift).Concat(pixels.Take(shift)).ToList();
-            
+
                 // Draw the shifted pixels on the screen
                 for (int x = 0; x < pixels.Count; x++)
                 {
                     e.Graphics.FillRectangle(new SolidBrush(pixels[x]), x, row, 1, 1);
                 }
             }
+            
         }
 
         private void Glitch_Tick(object sender, EventArgs e)
@@ -398,7 +394,7 @@ namespace Pong
             double alpha = -125 * Math.Cos(x * Math.PI * 2/ 120) + 125;
             if (alpha == 250 || alpha == 0)
             {
-                night = !night;
+                nightTime = !nightTime;
                 NightCalculator.Interval = 7000;
             }
             else
