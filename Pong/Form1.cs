@@ -150,7 +150,6 @@ namespace Pong
         {
             if (newGameOk)
             {
-                
                 x = 0;
                 player1Score = player2Score = 0;
                 newGameOk = false;
@@ -161,7 +160,7 @@ namespace Pong
             //player start positions
             player1 = new Rectangle(PADDLE_EDGE, this.Height / 2 - PADDLE_HEIGHT / 2, PADDLE_WIDTH, PADDLE_HEIGHT);
             player2 = new Rectangle(this.Width - PADDLE_EDGE - PADDLE_WIDTH, this.Height / 2 - PADDLE_HEIGHT / 2, PADDLE_WIDTH, PADDLE_HEIGHT);
-            if (nightTime = true)
+            if (nightTime == true)
             {
                 NightCalculator.Interval = 1;
                 x += 7;
@@ -314,7 +313,16 @@ namespace Pong
             e.Graphics.DrawPolygon(whitePen, filterList.ToArray());
         }
 
-        
+        private List<PointF> RectangleToPolygon(Rectangle a)
+        {
+            List<PointF> rectanglePoints = new List<PointF>();
+            rectanglePoints.Add(new PointF(a.X, a.Y));
+            rectanglePoints.Add(new PointF(a.X + a.Width, a.Y));
+            rectanglePoints.Add(new PointF(a.X + a.Width, a.Y + a.Height));
+            rectanglePoints.Add(new PointF(a.X, a.Y + a.Height));
+
+            return rectanglePoints;
+        }
 
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
@@ -335,7 +343,7 @@ namespace Pong
                 new PointF(0, this.Height)
             };
 
-            e.Graphics.FillRectangle(whiteBrush, ball);
+            Filter(RectangleToPolygon(ball), e);
             night.AddPolygon(border);
             light.AddPolygon(player1Circle.ToArray());
             light.AddPolygon(player2Circle.ToArray());
@@ -343,11 +351,14 @@ namespace Pong
 
             e.Graphics.FillPath(blackBrush, night);
             e.Graphics.DrawPath(Pens.White, night);
+            
 
+            //e.Graphics.FillRectangle(whiteBrush, player1);
+            //e.Graphics.FillRectangle(whiteBrush, player2);
 
-            e.Graphics.FillRectangle(whiteBrush, player1);
-            e.Graphics.FillRectangle(whiteBrush, player2);
-                
+            Filter(RectangleToPolygon(player1), e);
+            Filter(RectangleToPolygon(player2), e);
+            
             Filter(player1Circle, e);
             Filter(player2Circle, e);
             int amountOfLines = 1;
