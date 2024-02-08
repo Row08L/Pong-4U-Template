@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -25,10 +26,10 @@ namespace Pong
     {
 
         #region global values
+
         double hitSpeed = 0.2;
         int hitNumber;
         bool nightTime = false;
-        bool once = false;
         SolidBrush blackBrush;
         //random value generator
         private Random random = new Random();
@@ -73,11 +74,84 @@ namespace Pong
         int player1Score = 0;
         int player2Score = 0;
         int gameWinScore = 3;  // number of points needed to win game
+
+        // Bayer Dithering Test
+        int[,] bayer2 = new int[2, 2]
+        {
+            {0, 2},
+            {3, 1},
+        };
+
+        int[,] bayer4 = new int[4, 4]
+        {
+            {0, 8, 2, 10},
+            {12, 4, 14, 6},
+            {3, 11, 1, 9 },
+            {15, 7, 13, 5},
+        };
+
+
+        #endregion
+
+        #region Dithering Test
+        private Bitmap Dither(PaintEventArgs e, double spreadValue)
+        {
+            Bitmap bitmap = new Bitmap(this.Width + 10, this.Height + 10);
+            using (Graphics graphics = Graphics.FromImage(bitmap))
+            {
+                graphics.CopyFromScreen(0, 0, 0, 0, new Size(bitmap.Width, 1));
+            }
+
+            int dementions = 4;
+            // Extract pixel colors into a list
+            List<Color> pixels = new List<Color>();
+
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                for (int x = 0; x < bitmap.Width; x++)
+                {
+                    int rX = x % dementions;
+                    int rY = y % dementions;
+
+                    double M = bayer4[rX, rY];
+
+                    M = (M / Math.Pow(dementions, 2) - 0.5);
+
+                    bitmap.SetPixel(x, y, AddNoiseToPixel(bitmap.GetPixel(x, y), M * spreadValue));
+                }
+            }
+            return bitmap;
+        }
+
+        public static Color AddNoiseToPixel(Color originalColor, double noiseValue)
+        {
+            // Get the individual components of the original color
+            int red = originalColor.R;
+            int green = originalColor.G;
+            int blue = originalColor.B;
+
+            // Scale and add noise to each color component
+            red = Clamp((int)(red + noiseValue * 255), 0, 255);
+            green = Clamp((int)(green + noiseValue * 255), 0, 255);
+            blue = Clamp((int)(blue + noiseValue * 255), 0, 255);
+
+            // Create and return the new color with noise added
+            return Color.FromArgb(red, green, blue);
+        }
+
+        // Clamp "Clamps" a value between two others
+        // if input value is outside of clamp range values it will be turned into the closest clamping value
+        private static int Clamp(int value, int min, int max)
+        {
+            return Math.Max(min, Math.Min(max, value));
+        }
+
         #endregion
 
         public Form1()
         {
             InitializeComponent();
+
             x += 1;
             double alpha = -50 * Math.Cos((10) * x) + 50;
             Color transparentBlack = Color.FromArgb(Convert.ToInt32(alpha), Color.Black);
@@ -90,6 +164,7 @@ namespace Pong
             yellowPen = new Pen(transparentYellow, 6);
         }
 
+        #region Key Press Code
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
             //check to see if a key is pressed and set is KeyDown value to true if it has
@@ -142,7 +217,7 @@ namespace Pong
                     break;
             }
         }
-
+        #endregion
         /// <summary>
         /// sets the ball and paddle positions for game start
         /// </summary>
@@ -332,6 +407,7 @@ namespace Pong
             player1Circle.AddRange(PlayerLight(player1));
             player2Circle.AddRange(PlayerLight(player2));
 
+            #region Night Effect
             GraphicsPath night = new GraphicsPath();
             GraphicsPath light = new GraphicsPath();
 
@@ -351,27 +427,30 @@ namespace Pong
 
             e.Graphics.FillPath(blackBrush, night);
             e.Graphics.DrawPath(Pens.White, night);
-            
 
-            //e.Graphics.FillRectangle(whiteBrush, player1);
-            //e.Graphics.FillRectangle(whiteBrush, player2);
+            #endregion
 
             Filter(RectangleToPolygon(player1), e);
             Filter(RectangleToPolygon(player2), e);
             
             Filter(player1Circle, e);
             Filter(player2Circle, e);
+
+            e.Graphics.DrawImage(Dither(e, 2), 0, 0, ClientSize.Width, ClientSize.Height);
+            //GlitchLines(e);
+        }
+        private void GlitchLines(PaintEventArgs e)
+        {
             int amountOfLines = 1;
-            
             for (int i = 0; i < amountOfLines; i++)
             {
                 int row = random.Next(0, this.Height);
 
                 // Capture a row of pixels
-                Bitmap bitmap = new Bitmap(this.Width, 1);
+                Bitmap bitmap = new Bitmap(this.Width + 10, 1);
                 using (Graphics graphics = Graphics.FromImage(bitmap))
                 {
-                    graphics.CopyFromScreen(0, row, 0, 0, new Size(this.Width, 1));
+                    graphics.CopyFromScreen(0, row, 0, 0, new Size(bitmap.Width, 1));
                 }
 
                 // Extract pixel colors into a list
@@ -386,12 +465,19 @@ namespace Pong
                 pixels = pixels.Skip(shift).Concat(pixels.Take(shift)).ToList();
 
                 // Draw the shifted pixels on the screen
+                //Bitmap bitmapFinal = new Bitmap(this.Width + 10, 1);
+                //int d = 0;
+                //foreach (Color s in pixels)
+                //{
+                //    bitmapFinal.SetPixel(d, 0, s);
+                //    d++;
+                //}
+                //e.Graphics.DrawImage(bitmapFinal, 0, 0, 0, row);
                 for (int x = 0; x < pixels.Count; x++)
                 {
                     e.Graphics.FillRectangle(new SolidBrush(pixels[x]), x, row, 1, 1);
                 }
             }
-            
         }
 
         private void Glitch_Tick(object sender, EventArgs e)
