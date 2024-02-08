@@ -25,7 +25,9 @@ namespace Pong
     {
 
         #region global values
-        SolidBrush blackBrush = new SolidBrush(Color.Black);
+        bool night = false;
+        bool once = false;
+        SolidBrush blackBrush;
         //random value generator
         private Random random = new Random();
         //graphics objects for drawing
@@ -54,6 +56,7 @@ namespace Pong
         const int BALL_WIDTH = 20;
         const int BALL_HEIGHT = 20; 
         Rectangle ball;
+        bool hit = false;
 
         int x = 0;
 
@@ -73,6 +76,10 @@ namespace Pong
         public Form1()
         {
             InitializeComponent();
+            x += 1;
+            double alpha = -50 * Math.Cos((10) * x) + 50;
+            Color transparentBlack = Color.FromArgb(Convert.ToInt32(alpha), Color.Black);
+            blackBrush = new SolidBrush(transparentBlack);
             Color transparentRed = Color.FromArgb(200, Color.Red);
             redPen = new Pen(transparentRed, 6);
             Color transparentBlue = Color.FromArgb(70, Color.Blue);
@@ -150,7 +157,11 @@ namespace Pong
             //player start positions
             player1 = new Rectangle(PADDLE_EDGE, this.Height / 2 - PADDLE_HEIGHT / 2, PADDLE_WIDTH, PADDLE_HEIGHT);
             player2 = new Rectangle(this.Width - PADDLE_EDGE - PADDLE_WIDTH, this.Height / 2 - PADDLE_HEIGHT / 2, PADDLE_WIDTH, PADDLE_HEIGHT);
-
+            if (night = true)
+            {
+                NightCalculator.Interval = 1;
+                x += 7;
+            }
             // TODO create a ball rectangle in the middle of screen
             ball = new Rectangle(this.Width / 2 - BALL_WIDTH / 2, this.Height / 2 - BALL_HEIGHT / 2, BALL_WIDTH, BALL_HEIGHT);
 
@@ -223,9 +234,9 @@ namespace Pong
             #endregion
 
             #region ball collision with paddles
-
-            if ((ball.IntersectsWith(player1) && ball.X < this.Width / 2) || (ball.IntersectsWith(player2) && ball.X > this.Width / 2))
+            if ((ball.IntersectsWith(player1) || ball.IntersectsWith(player2)) && hit == false)
             {
+                hit = true;
                 ballMoveRight =! ballMoveRight;
                 collisionSound.Play();
             }
@@ -308,6 +319,8 @@ namespace Pong
             e.Graphics.DrawPolygon(whitePen, filterList.ToArray());
         }
 
+        
+
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
             List<PointF> player1Circle = new List<PointF>();
@@ -376,13 +389,26 @@ namespace Pong
 
         private void Glitch_Tick(object sender, EventArgs e)
         {
-            x += 1;
-            double alpha = -50 * Math.Cos((100)* x) + 50;
-            Color transparentBlack = Color.FromArgb(x, Color.Black);
-            SolidBrush blackBrush = new SolidBrush(transparentBlack);
+            hit = false;
         }
 
+        private void NightCalculator_Tick(object sender, EventArgs e)
+        {
+            x += 1;
+            double alpha = -125 * Math.Cos(x * Math.PI * 2/ 120) + 125;
+            if (alpha == 250 || alpha == 0)
+            {
+                night = !night;
+                NightCalculator.Interval = 7000;
+            }
+            else
+            {
+                NightCalculator.Interval = 100;
+            }
         
+             Color transparentBlack = Color.FromArgb(Convert.ToInt32(alpha), Color.Black);
+            blackBrush = new SolidBrush(transparentBlack);
+        }
 
         private List<PointF> PlayerLight(Rectangle player)
         {

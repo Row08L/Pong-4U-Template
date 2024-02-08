@@ -34,6 +34,7 @@
             this.player1ScoreLabel = new System.Windows.Forms.Label();
             this.plaery2ScoreLabel = new System.Windows.Forms.Label();
             this.Glitch = new System.Windows.Forms.Timer(this.components);
+            this.NightCalculator = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
             // gameUpdateLoop
@@ -94,6 +95,11 @@
             this.Glitch.Interval = 1000;
             this.Glitch.Tick += new System.EventHandler(this.Glitch_Tick);
             // 
+            // NightCalculator
+            // 
+            this.NightCalculator.Enabled = true;
+            this.NightCalculator.Tick += new System.EventHandler(this.NightCalculator_Tick);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -124,6 +130,7 @@
         private System.Windows.Forms.Label player1ScoreLabel;
         private System.Windows.Forms.Label plaery2ScoreLabel;
         private System.Windows.Forms.Timer Glitch;
+        private System.Windows.Forms.Timer NightCalculator;
     }
 }
 
