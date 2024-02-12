@@ -125,7 +125,7 @@ namespace Pong
 
 
 
-            int dementions = 16;
+            int dementions = 4;
 
 
             for (int y = 0; y < bitmap.Height; y++)
@@ -134,7 +134,7 @@ namespace Pong
                 {
                     #region dither test
                     Color bitmapColor = bitmap.GetPixel(x, y);
-                    double threshhold = bayer16[x % dementions, y % dementions];
+                    double threshhold = bayer4[x % dementions, y % dementions];
 
                     threshhold = threshhold / Math.Pow(dementions, 2) - 0.5;
 
@@ -477,7 +477,7 @@ namespace Pong
 
             
 
-            Bitmap ditheredBitmap = Dither(bitmap, 4, 20);
+            Bitmap ditheredBitmap = Dither(bitmap, 255 * 2, 20);
             e.Graphics.DrawImage(ditheredBitmap, new PointF(0, 0));
 
 
