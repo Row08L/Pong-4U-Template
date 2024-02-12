@@ -26,6 +26,8 @@ namespace Pong
     {
 
         #region global values
+        Bitmap bitmap;
+        Graphics preFilter;
 
         double hitSpeed = 0.2;
         int hitNumber;
@@ -89,38 +91,68 @@ namespace Pong
             {3, 11, 1, 9 },
             {15, 7, 13, 5},
         };
+        int[,] bayer16 = {
+    {  0, 192,  48, 240,  12, 204,  60, 252,   3, 195,  51, 243,  15, 207,  63, 255 },
+    { 128,  64, 176, 112, 140,  76, 188, 124, 131,  67, 179, 115, 143,  79, 191, 127 },
+    {  32, 224,  16, 208,  44, 236,  28, 220,  35, 227,  19, 211,  47, 239,  31, 223 },
+    { 160,  96, 144,  80, 172, 108, 156,  92, 163,  99, 147,  83, 175, 111, 159,  95 },
+    {   8, 200,  56, 248,   4, 196,  52, 244,  11, 203,  59, 251,   7, 199,  55, 247 },
+    { 136,  72, 184, 120, 132,  68, 180, 116, 139,  75, 187, 123, 135,  71, 183, 119 },
+    {  40, 232,  24, 216,  36, 228,  20, 212,  43, 235,  27, 219,  39, 231,  23, 215 },
+    { 168, 104, 152,  88, 164, 100, 148,  84, 171, 107, 155,  91, 167, 103, 151,  87 },
+    {   2, 194,  50, 242,  14, 206,  62, 254,   1, 193,  49, 241,  13, 205,  61, 253 },
+    { 130,  66, 178, 114, 142,  78, 190, 126, 129,  65, 177, 113, 141,  77, 189, 125 },
+    {  34, 226,  18, 210,  46, 238,  30, 222,  33, 225,  17, 209,  45, 237,  29, 221 },
+    { 162,  98, 146,  82, 174, 110, 158,  94, 161,  97, 145,  81, 173, 109, 157,  93 },
+    {  10, 202,  58, 250,   6, 198,  54, 246,   9, 201,  57, 249,   5, 197,  53, 245 },
+    { 138,  74, 186, 122, 134,  70, 182, 118, 137,  73, 185, 121, 133,  69, 181, 117 },
+    {  42, 234,  26, 218,  38, 230,  22, 214,  41, 233,  25, 217,  37, 229,  21, 213 },
+    { 170, 106, 154,  90, 166, 102, 150,  86, 169, 105, 153,  89, 165, 101, 149,  85 }
+};
 
 
         #endregion
 
-        #region Dithering Test
-        private Bitmap Dither(PaintEventArgs e, double spreadValue)
+        #region Dither Code
+        private Bitmap Dither(Bitmap originalImage, double spreadValue, int numberOfColors)
         {
-            Bitmap bitmap = new Bitmap(this.Width + 10, this.Height + 10);
-            using (Graphics graphics = Graphics.FromImage(bitmap))
-            {
-                graphics.CopyFromScreen(0, 0, 0, 0, new Size(bitmap.Width, 1));
-            }
+            spreadValue = 255 / spreadValue;
 
-            int dementions = 4;
-            // Extract pixel colors into a list
-            List<Color> pixels = new List<Color>();
+            // Downscale the original image
+            int scaledWidth = originalImage.Width / 5; // Adjust the scaling factor as needed
+            int scaledHeight = originalImage.Height / 5;
+            Bitmap bitmap = new Bitmap(originalImage, scaledWidth, scaledHeight);
+
+
+
+            int dementions = 16;
+
 
             for (int y = 0; y < bitmap.Height; y++)
             {
                 for (int x = 0; x < bitmap.Width; x++)
                 {
-                    int rX = x % dementions;
-                    int rY = y % dementions;
+                    #region dither test
+                    Color bitmapColor = bitmap.GetPixel(x, y);
+                    double threshhold = bayer16[x % dementions, y % dementions];
 
-                    double M = bayer4[rX, rY];
+                    threshhold = threshhold / Math.Pow(dementions, 2) - 0.5;
 
-                    M = (M / Math.Pow(dementions, 2) - 0.5);
+                    double LimitR = Math.Floor((numberOfColors - 1) * bitmapColor.R / 255.0) * (255 / (numberOfColors - 1));
+                    double LimitG = Math.Floor((numberOfColors - 1) * bitmapColor.G / 255.0) * (255 / (numberOfColors - 1));
+                    double LimitB = Math.Floor((numberOfColors - 1) * bitmapColor.B / 255.0) * (255 / (numberOfColors - 1));
 
-                    bitmap.SetPixel(x, y, AddNoiseToPixel(bitmap.GetPixel(x, y), M * spreadValue));
+                    int newR = Clamp(Convert.ToInt32(LimitR * (bitmapColor.R + spreadValue * (threshhold - 0.5))), 0, 255);
+                    int newG = Clamp(Convert.ToInt32(LimitG * (bitmapColor.G + spreadValue * (threshhold - 0.5))), 0, 255);
+                    int newB = Clamp(Convert.ToInt32(LimitB * (bitmapColor.B + spreadValue * (threshhold - 0.5))), 0, 255);
+
+                    bitmap.SetPixel(x, y, Color.FromArgb(newR, newG, newB));
+                    #endregion
                 }
             }
-            return bitmap;
+            // Upscale the downscaled image
+            Bitmap upscaledImage = new Bitmap(bitmap, originalImage.Width, originalImage.Height);
+            return upscaledImage;
         }
 
         public static Color AddNoiseToPixel(Color originalColor, double noiseValue)
@@ -141,17 +173,17 @@ namespace Pong
 
         // Clamp "Clamps" a value between two others
         // if input value is outside of clamp range values it will be turned into the closest clamping value
-        private static int Clamp(int value, int min, int max)
+        private static int Clamp(double value, int min, int max)
         {
-            return Math.Max(min, Math.Min(max, value));
+            return Convert.ToInt32(Math.Max(min, Math.Min(max, value)));
         }
-
         #endregion
 
         public Form1()
         {
             InitializeComponent();
-
+            bitmap = new Bitmap(this.Width, this.Height);
+            preFilter = Graphics.FromImage(bitmap);
             x += 1;
             double alpha = -50 * Math.Cos((10) * x) + 50;
             Color transparentBlack = Color.FromArgb(Convert.ToInt32(alpha), Color.Black);
@@ -162,6 +194,8 @@ namespace Pong
             bluePen = new Pen(transparentBlue, 5);
             Color transparentYellow = Color.FromArgb(200, Color.Yellow);
             yellowPen = new Pen(transparentYellow, 6);
+
+            
         }
 
         #region Key Press Code
@@ -358,6 +392,7 @@ namespace Pong
             }
             #endregion
             this.Refresh();
+            
         }
         
         private void GameOver(bool player1Win, bool player2Win)
@@ -376,16 +411,16 @@ namespace Pong
             Refresh();
         }
 
-        private void Filter(List<PointF> filterList, PaintEventArgs e)
+        private void Filter(List<PointF> filterList)
         {
             List<PointF> redList = new List<PointF>(filterList.Select(p => new PointF(p.X - 4, p.Y)).ToList());
             List<PointF> blueList = new List<PointF>(filterList.Select(p => new PointF(p.X + 3, p.Y)).ToList());
             List<PointF> yellowList = new List<PointF>(filterList.Select(p => new PointF(p.X - 2, p.Y)).ToList());
 
-            e.Graphics.DrawPolygon(redPen, (redList).ToArray());
-            e.Graphics.DrawPolygon(yellowPen, (yellowList).ToArray());
-            e.Graphics.DrawPolygon(bluePen, (blueList).ToArray());
-            e.Graphics.DrawPolygon(whitePen, filterList.ToArray());
+            preFilter.DrawPolygon(redPen, (redList).ToArray());
+            preFilter.DrawPolygon(yellowPen, (yellowList).ToArray());
+            preFilter.DrawPolygon(bluePen, (blueList).ToArray());
+            preFilter.DrawPolygon(whitePen, filterList.ToArray());
         }
 
         private List<PointF> RectangleToPolygon(Rectangle a)
@@ -401,6 +436,9 @@ namespace Pong
 
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
+
+            bitmap = new Bitmap(this.Width, this.Height);
+            preFilter = Graphics.FromImage(bitmap);
             List<PointF> player1Circle = new List<PointF>();
             List<PointF> player2Circle = new List<PointF>();
 
@@ -419,25 +457,35 @@ namespace Pong
                 new PointF(0, this.Height)
             };
 
-            Filter(RectangleToPolygon(ball), e);
+            Filter(RectangleToPolygon(ball));
             night.AddPolygon(border);
             light.AddPolygon(player1Circle.ToArray());
             light.AddPolygon(player2Circle.ToArray());
             night.AddPath(light, true);
 
-            e.Graphics.FillPath(blackBrush, night);
-            e.Graphics.DrawPath(Pens.White, night);
+            preFilter.FillPath(blackBrush, night);
+            preFilter.DrawPath(Pens.White, night);
 
             #endregion
 
-            Filter(RectangleToPolygon(player1), e);
-            Filter(RectangleToPolygon(player2), e);
+            Filter(RectangleToPolygon(player1));
+            Filter(RectangleToPolygon(player2));
             
-            Filter(player1Circle, e);
-            Filter(player2Circle, e);
+            Filter(player1Circle);
+            Filter(player2Circle);
 
-            e.Graphics.DrawImage(Dither(e, 2), 0, 0, ClientSize.Width, ClientSize.Height);
+
+            
+
+            Bitmap ditheredBitmap = Dither(bitmap, 4, 20);
+            e.Graphics.DrawImage(ditheredBitmap, new PointF(0, 0));
+
+
             //GlitchLines(e);
+
+            bitmap.Dispose();
+            ditheredBitmap.Dispose();
+            
         }
         private void GlitchLines(PaintEventArgs e)
         {
